@@ -1,0 +1,32 @@
+{
+  "name": "ServLynx Drive — Disco QNAP",
+  "short_name": "ServLynx Drive",
+  "description": "Acesse seu QNAP NAS como disco de rede, veja fotos e ouca musicas sem baixar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#091322",
+  "theme_color": "#0067c0",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

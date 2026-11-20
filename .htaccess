@@ -1,0 +1,66 @@
+DirectoryIndex index.html index.php
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  <FilesMatch "\.(html|htm)$">
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+  </FilesMatch>
+
+  Header set Content-Security-Policy "default-src 'none'; sandbox" env=SLX_SANDBOX_CSP
+  Header set Content-Security-Policy "default-src 'none'; sandbox" env=REDIRECT_SLX_SANDBOX_CSP
+
+  <FilesMatch "\.(html|htm|php)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Repassar Authorization header para PHP (WebDAV Basic Auth e Bearer Token)
+  RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Forcar CSP sandbox para downloads de arquivos ativos/scriptaveis via API
+  RewriteCond %{QUERY_STRING} (^|&)route=download(&|$) [NC]
+  RewriteCond %{QUERY_STRING} (\.|%2e)(svgz?|html?|xhtml|xht|xml|xsl|xslt|m?js|cjs|shtml|phtml|php|swf)(&|$) [NC]
+  RewriteRule ^ - [E=SLX_SANDBOX_CSP:1]
+
+  # Bloquear acesso web direto à pasta interna de dados, segredos e ponte
+  RewriteRule ^data(/|$) - [F,NC,L]
+  RewriteRule (^|/)(secrets\.(php|json)|users\.json|sessions\.json|state\.json|rate_limit\.json|notify_config\.json|reset_tokens\.json|\.env(\..*)?)$ - [F,NC,L]
+  RewriteRule \.log$ - [F,NC,L]
+
+  # Garantir roteamento do WebDAV para subcaminhos limpos /dav/... e /dav.php/...
+  RewriteRule ^dav(/.*)?$ dav.php [QSA,L]
+  RewriteRule ^dav\.php(/.*)?$ dav.php [QSA,L]
+
+  # Permitir acesso normal a arquivos e diretórios existentes
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback SPA para index.html
+  RewriteRule . /index.html [L]
+</IfModule>
+
+<FilesMatch "(^\.|secrets\.php|secrets\.json|users\.json|sessions\.json|state\.json|rate_limit\.json|notify_config\.json|reset_tokens\.json|\.log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

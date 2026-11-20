@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0067c0" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ServLynx Drive" />
+  <title>ServLynx Explorer — QNAP NAS &amp; Disco em Rede</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=1.0.14" />
+</head>
+<body>
+  <!-- ==================== TELA DE LOGIN ==================== -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-backdrop"></div>
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 7a2 2 0 0 1 2-2h4.2a2 2 0 0 1 1.4.58l1.2 1.24a2 2 0 0 0 1.4.58H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" fill="#FCD34D" stroke="#D97706"/>
+          </svg>
+        </div>
+        <div>
+          <h1>ServLynx Explorer</h1>
+          <p>Acesso Remoto &amp; Disco QNAP TS-231P</p>
+        </div>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="loginEmail">Usuário ou E-mail</label>
+          <input type="text" id="loginEmail" autocomplete="username" placeholder="Insira o seu email" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Senha</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Digite sua senha" required />
+            <button type="button" id="toggleLoginPass" class="btn-eye" title="Mostrar/ocultar senha">👁</button>
+          </div>
+        </div>
+        <div id="loginError" class="login-error hidden"></div>
+        <button type="submit" id="loginSubmit" class="btn-primary btn-full">
+          <span>Entrar no ServLynx</span>
+        </button>
+        <div class="login-aux-links">
+          <button type="button" id="btnForgotPassLogin" class="btn-link-login">🔑 Esqueci minha senha</button>
+          <span class="login-aux-sep">•</span>
+          <button type="button" id="btnChangePassLogin" class="btn-link-login">🔄 Trocar senha</button>
+        </div>
+      </form>
+
+      <div class="login-footer">
+        <span id="loginBridgeStatus" class="status-pill checking">
+          <span class="dot"></span> Verificando conexão com o QNAP...
+        </span>
+        <span class="host-tag">servlynx.lynxems.com.br</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JANELA PRINCIPAL EXPLORER ==================== -->
+  <div id="appShell" class="explorer-shell hidden">
+    <!-- Barra de Título e Abas Estilo Windows 11 -->
+    <header class="win-titlebar">
+      <div class="titlebar-left">
+        <button id="btnMobileMenu" class="icon-btn mobile-only" title="Menu Lateral">☰</button>
+        <div class="app-badge">
+          <svg viewBox="0 0 24 24" class="win-folder-svg"><path d="M2 6.5A2.5 2.5 0 0 1 4.5 4h4.38a2 2 0 0 1 1.41.59l1.12 1.12a2 2 0 0 0 1.41.59H19.5A2.5 2.5 0 0 1 22 8.8v8.7a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 17.5v-11z" fill="#FBBF24"/><path d="M2 9.5h20v8a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 17.5v-8z" fill="#FDE68A"/></svg>
+          <span class="app-title-text">ServLynx</span>
+        </div>
+        <div id="tabsContainer" class="win-tabs"></div>
+        <button id="btnNewTab" class="tab-add-btn" title="Nova aba (Abrir raiz em nova aba)">+</button>
+      </div>
+      <div class="titlebar-right">
+        <button id="btnTopAdminPanel" class="btn-admin-panel admin-only hidden" type="button" title="Abrir Painel Administrativo (Usuários, Pastas e Acessos QNAP)">
+          <span>🛡️</span><span class="btn-connect-lbl">Painel Admin</span>
+        </button>
+        <button id="btnConnectQnap" class="btn-connect-qnap" type="button" title="Conectar ao QNAP NAS e sincronizar pastas">
+          <span>🔌</span><span class="btn-connect-lbl">Conectar ao QNAP</span>
+        </button>
+        <button id="btnOpenDriveModal" class="btn-ghost-sm hide-xs" type="button" title="Instalar Drive de Rede no PC (Abrir/Salvar) ou App">
+          💿 <span class="hide-sm">Instalar Drive</span>
+        </button>
+        <button id="btnTopTutorialVideo" class="btn-ghost-sm hide-sm" type="button" title="Assistir vídeo passo a passo de como instalar o Drive no PC">
+          🎬 <span class="hide-md">Vídeo Tutorial</span>
+        </button>
+        <button id="topBridgeBadge" class="status-pill online status-btn" type="button" title="Clique para testar/reconectar com o QNAP">
+          <span class="dot"></span> <span id="topBridgeText">QNAP Online</span>
+        </button>
+        <button class="user-chip" id="userChip" type="button" title="Minha Conta: Alterar Login e Senha">
+          <span class="user-avatar" id="userAvatar">E</span>
+          <div class="user-meta">
+            <span class="user-name" id="topUserName">Usuário</span>
+            <span class="user-role" id="topUserRole">Admin</span>
+          </div>
+          <span class="user-edit-ico">⚙️</span>
+        </button>
+        <button id="btnMyAccount" class="btn-ghost-sm hide-md" type="button" title="Alterar meu login e senha">Minha Conta</button>
+        <button id="btnLogout" class="btn-ghost-sm" type="button" title="Sair do sistema">Sair</button>
+      </div>
+    </header>
+
+    <!-- Barra de Comando (Ribbon Windows 11) -->
+    <div id="commandBar" class="command-bar">
+      <div class="cmd-group">
+        <div class="dropdown-wrap">
+          <button id="btnNewMenu" class="cmd-btn cmd-primary-outline" type="button">
+            <span class="cmd-ico">⊕</span>
+            <span>Novo</span>
+            <span class="caret">▾</span>
+          </button>
+          <div id="newDropdown" class="dropdown-menu hidden">
+            <button class="dd-item" data-new="folder" type="button"><span class="dd-ico">📁</span> Nova Pasta</button>
+            <button class="dd-item" data-new="file" type="button"><span class="dd-ico">📄</span> Novo Arquivo de Texto</button>
+            <div class="dd-sep admin-only"></div>
+            <button class="dd-item admin-only" data-new="share" type="button"><span class="dd-ico">🗄️</span> Novo Compartilhamento QNAP</button>
+            <button class="dd-item admin-only" data-new="subdir-share" type="button"><span class="dd-ico">🤝</span> Compartilhar Subdiretório</button>
+            <button class="dd-item admin-only" data-new="user" type="button"><span class="dd-ico">👤</span> Novo Usuário</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-sep"></div>
+
+      <div class="cmd-group">
+        <button id="btnOpenItem" class="cmd-btn" type="button" title="Abrir, ver foto ou ouvir música sem baixar" disabled><span class="cmd-ico">👁️</span><span class="cmd-lbl">Abrir / Ver</span></button>
+        <button id="btnOpenLocalDrive" class="cmd-btn" type="button" title="Abrir direto pela letra do Drive no PC (Word, Excel, AutoCAD, PDF — sem baixar)" disabled><span class="cmd-ico">💻</span><span class="cmd-lbl">Abrir no PC (Drive)</span></button>
+        <button id="btnCut" class="cmd-btn" type="button" title="Recortar (Ctrl+X)" disabled><span class="cmd-ico">✂️</span><span class="cmd-lbl">Recortar</span></button>
+        <button id="btnCopy" class="cmd-btn" type="button" title="Copiar (Ctrl+C)" disabled><span class="cmd-ico">📋</span><span class="cmd-lbl">Copiar</span></button>
+        <button id="btnPaste" class="cmd-btn" type="button" title="Colar (Ctrl+V)" disabled><span class="cmd-ico">📌</span><span class="cmd-lbl">Colar</span></button>
+        <button id="btnRename" class="cmd-btn" type="button" title="Renomear (F2)" disabled><span class="cmd-ico">✏️</span><span class="cmd-lbl">Renomear</span></button>
+        <button id="btnDelete" class="cmd-btn cmd-danger" type="button" title="Excluir (Del)" disabled><span class="cmd-ico">🗑️</span><span class="cmd-lbl">Excluir</span></button>
+      </div>
+
+      <div class="cmd-sep"></div>
+
+      <div class="cmd-group">
+        <button id="btnUpload" class="cmd-btn cmd-upload-cta" type="button" title="Enviar fotos ou arquivos do celular/PC para uma pasta"><span class="cmd-ico">⬆️</span><span class="cmd-lbl">Enviar Fotos / Arquivos</span></button>
+        <input type="file" id="fileUploadInput" multiple class="hidden" />
+        <input type="file" id="photoUploadInput" accept="image/*,video/*,audio/*" multiple class="hidden" />
+        <input type="file" id="cameraUploadInput" accept="image/*" capture="environment" class="hidden" />
+        <input type="file" id="folderUploadInput" webkitdirectory directory multiple class="hidden" />
+        <button id="btnDownload" class="cmd-btn" type="button" disabled><span class="cmd-ico">⬇️</span><span class="cmd-lbl">Baixar</span></button>
+        <button id="btnProperties" class="cmd-btn" type="button" disabled><span class="cmd-ico">ℹ️</span><span class="cmd-lbl">Propriedades</span></button>
+        <button id="btnShareDir" class="cmd-btn admin-only hidden" type="button" title="Compartilhar pasta ou subdiretório com usuário específico" disabled><span class="cmd-ico">🤝</span><span class="cmd-lbl">Compartilhar</span></button>
+        <button id="btnMapDriveCmd" class="cmd-btn cmd-drive-cta" type="button" title="Instalar esta pasta como uma letra de drive no Windows (ex: S:, Y:, Z:) para aparecer no Abrir/Salvar"><span class="cmd-ico">💿</span><span class="cmd-lbl">Instalar Drive (PC)</span></button>
+      </div>
+
+      <div class="cmd-sep"></div>
+
+      <div class="cmd-group cmd-right">
+        <div class="dropdown-wrap">
+          <button id="btnViewMenu" class="cmd-btn" type="button">
+            <span class="cmd-ico">⊞</span>
+            <span>Exibir</span>
+            <span class="caret">▾</span>
+          </button>
+          <div id="viewDropdown" class="dropdown-menu dropdown-right hidden">
+            <button class="dd-item" data-view="details" type="button">☰ Detalhes (Lista Completa)</button>
+            <button class="dd-item" data-view="grid" type="button">⊞ Ícones / Fotos Grandes</button>
+            <button class="dd-item" data-view="list" type="button">☷ Lista Compacta</button>
+            <div class="dd-sep admin-only"></div>
+            <label class="dd-check admin-only">
+              <input type="checkbox" id="chkShowHidden" /> Mostrar itens ocultos
+            </label>
+          </div>
+        </div>
+        <button id="btnTogglePreview" class="cmd-btn hide-md" type="button" title="Alternar Painel de Detalhes">
+          <span class="cmd-ico">◫</span><span class="cmd-lbl">Detalhes</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Navegação e Endereço (Desktop e Mobile 2 linhas) -->
+    <div class="nav-bar">
+      <div class="nav-arrows">
+        <button id="btnBack" class="nav-btn" type="button" title="Voltar" disabled>←</button>
+        <button id="btnForward" class="nav-btn" type="button" title="Avançar" disabled>→</button>
+        <button id="btnUp" class="nav-btn" type="button" title="Subir um nível" disabled>↑</button>
+        <button id="btnRefresh" class="nav-btn" type="button" title="Atualizar (F5)">↻</button>
+      </div>
+
+      <div class="address-bar" id="addressBar">
+        <span class="addr-ico">💻</span>
+        <div id="breadcrumbs" class="breadcrumbs"></div>
+        <input type="text" id="addressInput" class="address-input hidden" value="/" />
+      </div>
+
+      <div class="search-box">
+        <span class="search-ico">🔍</span>
+        <input type="text" id="searchInput" placeholder="Pesquisar em NAS09534B..." />
+        <button id="btnClearSearch" class="search-clear hidden" type="button" title="Limpar pesquisa">✕</button>
+      </div>
+    </div>
+
+    <!-- Corpo Principal: Sidebar + Conteúdo + Painel Detalhes -->
+    <div class="explorer-body">
+      <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+
+      <!-- Sidebar Esquerda -->
+      <aside id="sidebar" class="sidebar">
+        <div class="side-section">
+          <div class="side-title">Conexão &amp; Disco Rígido</div>
+          <button class="side-item side-item-highlight" id="btnSideConnectQnap" type="button">
+            <span class="side-ico">🔌</span><span>Conectar ao QNAP</span>
+          </button>
+          <button class="side-item" id="btnSideDrive" type="button">
+            <span class="side-ico">💿</span><span>Instalar Drive no PC</span>
+          </button>
+          <button class="side-item" id="btnSideTutorialVideo" type="button">
+            <span class="side-ico">🎬</span><span>Vídeo: Como Instalar Drive</span>
+          </button>
+          <button class="side-item" id="btnSideUpload" type="button">
+            <span class="side-ico">⬆️</span><span>Enviar Fotos do Celular</span>
+          </button>
+        </div>
+
+        <div class="side-section admin-only" id="adminSidebarSection">
+          <div class="side-title">Administração QNAP</div>
+          <button class="side-item" data-nav="qnap-users" type="button">
+            <span class="side-ico">👥</span><span>Usuários &amp; Acessos QNAP</span>
+          </button>
+          <button class="side-item" data-nav="qnap-shares" type="button">
+            <span class="side-ico">🗄️</span><span>Pastas &amp; Permissões</span>
+          </button>
+          <button class="side-item" data-nav="qnap-monitor" type="button">
+            <span class="side-ico">📊</span><span>Monitor &amp; Recursos</span>
+          </button>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title">Acesso Rápido</div>
+          <button class="side-item active" data-nav="explorer" data-path="/" type="button">
+            <span class="side-ico">🏠</span><span>Início (Disco QNAP)</span>
+          </button>
+          <button class="side-item" data-nav="explorer" data-path="/Public" type="button">
+            <span class="side-ico">📂</span><span>Public</span>
+          </button>
+          <button class="side-item" data-nav="explorer" data-path="/Multimedia" type="button">
+            <span class="side-ico">🖼️</span><span>Multimedia</span>
+          </button>
+          <button class="side-item" data-nav="explorer" data-path="/Musica" type="button">
+            <span class="side-ico">🎵</span><span>Musica</span>
+          </button>
+          <button class="side-item" data-nav="explorer" data-path="/Lynx" type="button">
+            <span class="side-ico">📁</span><span>Lynx</span>
+          </button>
+          <button class="side-item" data-nav="explorer" data-path="/Download" type="button">
+            <span class="side-ico">⬇️</span><span>Download</span>
+          </button>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title-row">
+            <span class="side-title">Este QNAP (NAS09534B)</span>
+          </div>
+          <div class="nas-capacity-box" id="nasCapacityBox">
+            <div class="cap-label">
+              <span>Disco Rígido QNAP (L:)</span>
+              <span id="capText">-- / 1.8 TB</span>
+            </div>
+            <div class="cap-bar"><div class="cap-fill" id="capFill" style="width: 23%"></div></div>
+          </div>
+          <div id="sidebarShares" class="side-tree"></div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title">Minha Conta</div>
+          <button class="side-item" id="btnSideMyAccount" type="button">
+            <span class="side-ico">🔐</span><span>Alterar Login e Senha</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Área Principal -->
+      <main id="mainPane" class="main-pane">
+        <!-- Dropzone overlay -->
+        <div id="dropOverlay" class="drop-overlay hidden">
+          <div class="drop-box">
+            <div class="drop-ico">⬆️</div>
+            <h3>Solte os arquivos para enviar ao QNAP</h3>
+            <p id="dropTargetLabel">Destino: /</p>
+          </div>
+        </div>
+
+        <!-- VIEW 1: EXPLORADOR DE ARQUIVOS -->
+        <section id="viewExplorer" class="content-view">
+          <!-- Cartão Unidade de Disco Rígido (exibido na raiz /) -->
+          <div id="driveHeroBox" class="drive-hero hidden">
+            <div class="drive-hero-left">
+              <div class="drive-disk-ico">💿</div>
+              <div class="drive-hero-info">
+                <div class="drive-hero-title">Unidade de Rede QNAP TS-231P (L:)</div>
+                <div class="drive-hero-sub" id="driveHeroSub">NAS09534B • Fotos e músicas reproduzem sem baixar</div>
+                <div class="drive-hero-bar"><div id="driveHeroFill" class="drive-hero-fill" style="width: 24%"></div></div>
+              </div>
+            </div>
+            <div class="drive-hero-actions">
+              <button id="btnHeroConnect" class="btn-primary btn-sm-pill" type="button">🔌 Conectar ao QNAP</button>
+              <button id="btnHeroUpload" class="btn-secondary btn-sm-pill" type="button">⬆️ Enviar Fotos</button>
+              <button id="btnHeroInstallDrive" class="btn-secondary btn-sm-pill" type="button">💿 Instalar Drive no PC</button>
+              <button id="btnHeroAdminPanel" class="btn-admin-panel btn-sm-pill admin-only hidden" type="button">🛡️ Painel Admin QNAP</button>
+            </div>
+          </div>
+
+          <div id="searchBanner" class="info-banner hidden">
+            <span id="searchBannerText">Resultados da pesquisa</span>
+            <button id="btnExitSearch" class="btn-link" type="button">Voltar à pasta</button>
+          </div>
+          <div id="accessModeBanner" class="info-banner hidden"></div>
+
+          <div id="loadingBar" class="loading-bar hidden"><div class="loading-bar-inner"></div></div>
+
+          <div id="fileContainer" class="file-container view-details"></div>
+
+          <div id="emptyState" class="empty-state hidden">
+            <div class="empty-ico">📂</div>
+            <p id="emptyText">Esta pasta está vazia.</p>
+          </div>
+        </section>
+
+        <!-- VIEW 2: MONITOR & RECURSOS DO QNAP -->
+        <section id="viewMonitor" class="content-view admin-view hidden">
+          <div class="admin-nav-tabs">
+            <button class="admin-tab-btn" data-admin-tab="qnap-users" type="button">👥 Usuários &amp; Acessos QNAP</button>
+            <button class="admin-tab-btn" data-admin-tab="qnap-shares" type="button">🗄️ Pastas &amp; Permissões</button>
+            <button class="admin-tab-btn active" data-admin-tab="qnap-monitor" type="button">📊 Monitor QNAP</button>
+            <button class="admin-tab-btn" data-admin-tab="explorer" type="button">📁 Voltar ao Explorador</button>
+          </div>
+          <div class="panel-header">
+            <div>
+              <h2>Monitoramento &amp; Recursos do QNAP TS-231P</h2>
+              <p>Gerenciamento de hardware, RAID, discos, serviços e sistema em tempo real</p>
+            </div>
+            <div class="panel-actions">
+              <button id="btnRefreshMonitor" class="btn-secondary" type="button">↻ Atualizar Dados</button>
+              <button id="btnQnapBeep" class="btn-secondary" type="button">🔊 Localizar NAS (Bip)</button>
+              <button id="btnQnapRestartSamba" class="btn-secondary" type="button">🔄 Reiniciar Samba (SMB)</button>
+            </div>
+          </div>
+
+          <div class="stats-grid" id="monitorCards"></div>
+
+          <div class="two-col-grid">
+            <div class="card-box">
+              <h3>Armazenamento &amp; Discos Físicos</h3>
+              <div id="monitorDisks"></div>
+            </div>
+            <div class="card-box">
+              <h3>Serviços &amp; Rede do QNAP</h3>
+              <div id="monitorServices"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 3: PASTAS COMPARTILHADAS (SHARES) -->
+        <section id="viewShares" class="content-view admin-view hidden">
+          <div class="admin-nav-tabs">
+            <button class="admin-tab-btn" data-admin-tab="qnap-users" type="button">👥 Usuários &amp; Acessos QNAP</button>
+            <button class="admin-tab-btn active" data-admin-tab="qnap-shares" type="button">🗄️ Pastas &amp; Permissões</button>
+            <button class="admin-tab-btn" data-admin-tab="qnap-monitor" type="button">📊 Monitor QNAP</button>
+            <button class="admin-tab-btn" data-admin-tab="explorer" type="button">📁 Voltar ao Explorador</button>
+          </div>
+          <div class="panel-header">
+            <div>
+              <h2>Pastas Compartilhadas do QNAP (Shares / Samba)</h2>
+              <p>Crie ou gerencie compartilhamentos na raiz do volume <code>/share/CACHEDEV1_DATA</code></p>
+            </div>
+            <div class="panel-actions">
+              <button id="btnOpenNewSubdirShare" class="btn-secondary" type="button">🤝 Compartilhar Subdiretório</button>
+              <button id="btnOpenNewShare" class="btn-primary" type="button">+ Novo Compartilhamento</button>
+            </div>
+          </div>
+          <div class="table-wrap mb-16">
+            <table class="data-table" id="sharesTable">
+              <thead>
+                <tr>
+                  <th>Nome do Compartilhamento</th>
+                  <th>Caminho no QNAP</th>
+                  <th>Comentário / Descrição</th>
+                  <th>Acesso no QNAP (SMB)</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="sharesTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="card-box">
+            <div class="sub-header">
+              <h3>Subdiretórios Compartilhados com Usuários Específicos</h3>
+              <span style="font-size:12px;color:var(--text-muted)">Libere subpastas específicas sem abrir a pasta raiz inteira</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="subdirSharesTable">
+                <thead>
+                  <tr>
+                    <th>Subdiretório</th>
+                    <th>Pasta Raiz</th>
+                    <th>Usuários &amp; Permissões Específicas</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="subdirSharesTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: USUÁRIOS & PERMISSÕES -->
+        <section id="viewUsers" class="content-view admin-view hidden">
+          <div class="admin-nav-tabs">
+            <button class="admin-tab-btn active" data-admin-tab="qnap-users" type="button">👥 Usuários &amp; Acessos QNAP</button>
+            <button class="admin-tab-btn" data-admin-tab="qnap-shares" type="button">🗄️ Pastas &amp; Permissões</button>
+            <button class="admin-tab-btn" data-admin-tab="qnap-monitor" type="button">📊 Monitor QNAP</button>
+            <button class="admin-tab-btn" data-admin-tab="explorer" type="button">📁 Voltar ao Explorador</button>
+          </div>
+          <div class="panel-header">
+            <div>
+              <h2>Gerenciamento de Usuários &amp; Permissões</h2>
+              <p>Crie contas de acesso ao ServLynx Explorer, defina permissões por pasta e sincronize usuários no QNAP</p>
+            </div>
+            <div class="panel-actions">
+              <button id="btnOpenNotifyConfig" class="btn-secondary" type="button">⚙️ Config. E-mail &amp; WhatsApp</button>
+              <button id="btnOpenNewUser" class="btn-primary" type="button">+ Criar Novo Usuário</button>
+            </div>
+          </div>
+
+          <div class="card-box mb-16">
+            <h3>Usuários do Portal ServLynx (servlynx.lynxems.com.br)</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Usuário / E-mail</th>
+                    <th>Perfil</th>
+                    <th>Pastas Permitidas</th>
+                    <th>Permissões</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <div class="sub-header">
+              <h3>Usuários Nativos do Sistema QNAP (QTS / Rede Windows SMB)</h3>
+              <button id="btnOpenNewQnapUser" class="btn-secondary" type="button">+ Criar Usuário Direto no QNAP</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Usuário NAS</th>
+                    <th>UID</th>
+                    <th>Grupo Principal</th>
+                    <th>Pastas Permitidas (QNAP)</th>
+                    <th>Ações no QNAP</th>
+                  </tr>
+                </thead>
+                <tbody id="qnapUsersTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Painel Direito de Detalhes (Preview Pane estilo Windows 11) -->
+      <aside id="detailsPane" class="details-pane hidden">
+        <div class="details-header">
+          <span>Detalhes</span>
+          <button id="btnCloseDetails" class="icon-btn" type="button">✕</button>
+        </div>
+        <div id="detailsContent" class="details-content">
+          <div class="details-empty">Selecione um arquivo ou pasta para ver os detalhes.</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Player de Música Persistente (Streaming direto sem download) -->
+    <div id="audioPlayerBar" class="audio-player-bar hidden">
+      <div class="audio-meta">
+        <div class="audio-disc" id="audioDisc">🎵</div>
+        <div class="audio-info">
+          <div class="audio-title" id="audioTrackTitle">Nenhuma música</div>
+          <div class="audio-sub" id="audioTrackSub">ServLynx Audio Player</div>
+        </div>
+      </div>
+      <div class="audio-controls">
+        <button id="btnAudioPrev" class="audio-btn" type="button" title="Música anterior">⏮</button>
+        <button id="btnAudioPlayPause" class="audio-btn audio-btn-main" type="button" title="Tocar / Pausar">▶</button>
+        <button id="btnAudioNext" class="audio-btn" type="button" title="Próxima música">⏭</button>
+        <audio id="globalAudio" controls preload="metadata" playsinline></audio>
+        <button id="btnAudioList" class="audio-btn" type="button" title="Playlist da pasta">📃</button>
+        <button id="btnAudioClose" class="audio-btn" type="button" title="Fechar player">✕</button>
+      </div>
+    </div>
+
+    <!-- Barra de Navegação Inferior Mobile -->
+    <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegação Mobile">
+      <button class="mb-nav-btn active" id="mbNavHome" type="button">
+        <span class="mb-ico">💿</span><span>Disco</span>
+      </button>
+      <button class="mb-nav-btn" id="mbNavConnect" type="button">
+        <span class="mb-ico">🔌</span><span>Conectar</span>
+      </button>
+      <button class="mb-nav-btn mb-nav-upload" id="mbNavUpload" type="button">
+        <span class="mb-ico">⬆️</span><span>Enviar</span>
+      </button>
+      <button class="mb-nav-btn" id="mbNavView" type="button">
+        <span class="mb-ico" id="mbNavViewIco">⊞</span><span id="mbNavViewLbl">Grade</span>
+      </button>
+      <button class="mb-nav-btn admin-only hidden" id="mbNavAdmin" type="button">
+        <span class="mb-ico">🛡️</span><span>Admin</span>
+      </button>
+      <button class="mb-nav-btn" id="mbNavMenu" type="button">
+        <span class="mb-ico">☰</span><span>Menu</span>
+      </button>
+    </nav>
+
+    <!-- Barra de Status Inferior Desktop -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <span id="statusCount">0 itens</span>
+        <span id="statusSelected" class="hidden"></span>
+      </div>
+      <div class="status-right">
+        <span id="statusClipboard" class="hidden"></span>
+        <span id="statusNasInfo">QNAP TS-231P (192.168.15.44)</span>
+        <div class="status-view-btns">
+          <button class="st-vbtn active" data-view="details" type="button" title="Modo Detalhes">☰</button>
+          <button class="st-vbtn" data-view="grid" type="button" title="Ícones e Miniaturas">⊞</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== MENU DE CONTEXTO (BOTÃO DIREITO / MENU ⋮) ==================== -->
+  <div id="contextMenu" class="context-menu hidden">
+    <button class="ctx-item" data-ctx="open" type="button">📂 Abrir / Visualizar</button>
+    <button class="ctx-item" data-ctx="open-local" type="button">💻 Abrir no PC pelo Drive (sem baixar)</button>
+    <button class="ctx-item" data-ctx="open-tab" type="button">📑 Abrir em nova aba</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-item" data-ctx="download" type="button">⬇️ Baixar</button>
+    <button class="ctx-item" data-ctx="cut" type="button">✂️ Recortar</button>
+    <button class="ctx-item" data-ctx="copy" type="button">📋 Copiar</button>
+    <button class="ctx-item" data-ctx="paste" type="button">📌 Colar aqui</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-item" data-ctx="rename" type="button">✏️ Renomear</button>
+    <button class="ctx-item ctx-danger" data-ctx="delete" type="button">🗑️ Excluir</button>
+    <div class="ctx-sep"></div>
+    <button class="ctx-item admin-only" data-ctx="share-dir" type="button">🤝 Compartilhar com Usuário...</button>
+    <button class="ctx-item" data-ctx="map-drive" type="button">💿 Mapear Pasta como Drive (PC)...</button>
+    <button class="ctx-item" data-ctx="properties" type="button">ℹ️ Propriedades</button>
+  </div>
+
+  <!-- ==================== MODAL GENÉRICO ==================== -->
+  <div id="modalBackdrop" class="modal-backdrop hidden">
+    <div id="modalDialog" class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modalTitle">Título</h3>
+        <button id="modalClose" class="icon-btn" type="button">✕</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalFooter" class="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- ==================== TOASTS ==================== -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js?v=1.0.14"></script>
+</body>
+</html>

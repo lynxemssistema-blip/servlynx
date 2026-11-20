@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+*.log
+data/
+local_users.json
+secrets.php
+secrets.json
+.env
+.env.*
